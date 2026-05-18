@@ -24,11 +24,13 @@ def cp_to_winpct(cp):
     return 50 + 50 * (2 / (1 + math.exp(-0.00368208 * cp)) - 1)
 
 
-def classify_move(wp_loss):
-    if wp_loss < 2:
+def classify_move(wp_loss,move_played, best_move_obj):
+    if move_played == best_move_obj:
         return "best"
-    elif wp_loss < 5:
+    elif wp_loss < 2:
         return "excellent"
+    elif wp_loss < 5:
+        return "great"
     elif wp_loss < 10:
         return "inaccuracy"
     elif wp_loss < 20:
@@ -111,26 +113,6 @@ def detect_patterns(board_before, move, board_after):
 
     return patterns
 
-
-def get_engine_line(board_before, engine, limit):
-    try:
-        result = engine.analyse(board_before, limit, multipv=1)
-        pv = result[0].get("pv", [])
-        if not pv:
-            return None, None
-
-        board_copy = board_before.copy()
-        readable_line = []
-        for m in pv[:5]:
-            readable_line.append(board_copy.san(m))
-            board_copy.push(m)
-
-        best_move_san = board_before.san(pv[0])
-        return best_move_san, readable_line
-    except Exception:
-        return None, None
-
-
 def analyze_game(pgn_string, user_color, time_per_move=0.1):
     
     game = chess.pgn.read_game(io.StringIO(pgn_string))
@@ -184,7 +166,7 @@ def analyze_game(pgn_string, user_color, time_per_move=0.1):
                 wp_after = cp_to_winpct(score_after)
                 wp_loss = wp_before - wp_after
 
-                classification = classify_move(wp_loss) if is_user_move else None
+                classification = classify_move(wp_loss, move, best_move_obj) if is_user_move else None
 
                 patterns = []
                 engine_line = None
