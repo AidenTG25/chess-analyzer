@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <h1>Chess Analyzer</h1>
-    <GameSearch @games-loaded="onGamesLoaded" />
+    <GameSearch @games-loaded="onGamesLoaded" :has-results="games.length > 0" />
 
     <div class="main-layout" :class="{ 'has-analysis': analysisResult || analyzing }">
       <div class="game-list-panel" :style="(analysisResult || analyzing) ? { width: listWidth + 'px', minWidth: '200px' } : { width: '100%' }">
@@ -27,6 +27,8 @@
             <h2>vs {{ analysisResult.opponent }}</h2>
             <span class="meta">{{ analysisResult.time_class }} · playing as {{ analysisResult.user_color }} · {{ analysisResult.result }}</span>
           </div>
+          <AnalysisSummary :moves="analysisResult.moves" />
+          <EvalGraph :moves="analysisResult.moves" :user-color="analysisResult.user_color" />
           <MoveList :moves="analysisResult.moves" :user-color="analysisResult.user_color" />
         </div>
       </div>
@@ -37,12 +39,14 @@
 <script>
 import GameSearch from './components/GameSearch.vue'
 import GameList from './components/GameList.vue'
+import AnalysisSummary from './components/AnalysisSummary.vue'
 import MoveList from './components/MoveList.vue'
 import axios from 'axios'
+import EvalGraph from './components/EvalGraph.vue'
 
 export default {
   name: 'App',
-  components: { GameSearch, GameList, MoveList },
+  components: { GameSearch, GameList, MoveList, AnalysisSummary, EvalGraph},
   data() {
     return {
       games: [],
@@ -57,7 +61,7 @@ export default {
     }
   },
   mounted() {
-    const saved = localStorage.getItem('chessAnalyzerState')
+    const saved = sessionStorage.getItem('chessAnalyzerState')
     if (saved) {
       const { games, username, year, month } = JSON.parse(saved)
       this.games = games
@@ -80,7 +84,7 @@ export default {
       this.month = month
       this.selectedGame = null
       this.analysisResult = null
-      localStorage.setItem('chessAnalyzerState', JSON.stringify({ games, username, year, month }))
+      sessionStorage.setItem('chessAnalyzerState', JSON.stringify({ games, username, year, month }))
     },
     async onGameSelected(game) {
       this.selectedGame = game
