@@ -1,3 +1,4 @@
+
 <template>
   <div class="move-list">
     <div
@@ -32,6 +33,18 @@
           <div class="engine-line" v-if="expanded[i] && move.engine_line?.length">
             {{ move.engine_line.join(' → ') }}
           </div>
+        <div class="board-toggle">
+          <button class="line-btn" @click="toggleBoard(i)">
+            {{ boardVisible[i] ? 'hide board' : 'show board' }}
+          </button>
+          <ChessBoard
+            v-if="boardVisible[i]"
+            :fen="move.fen"
+            :best-move="move.best_move"
+            :engine-line="move.engine_line || []"
+            :orientation="userColor"
+          />
+        </div>
         </div>
       </div>
     </div>
@@ -39,14 +52,16 @@
 </template>
 
 <script>
+import ChessBoard from './ChessBoard.vue'
 export default {
   name: 'MoveList',
+  components:{ChessBoard },
   props: {
     moves: { type: Array, default: () => [] },
     userColor: { type: String, default: 'white' }
   },
   data() {
-    return { expanded: {} }
+    return { expanded: {} ,boardVisible:{}}
   },
   computed: {
     userMoves() {
@@ -54,6 +69,9 @@ export default {
     }
   },
   methods: {
+    toggleBoard(i) {
+      this.boardVisible[i] = !this.boardVisible[i]
+    },
     toggleLine(i) {
       this.expanded[i] = !this.expanded[i]
     }

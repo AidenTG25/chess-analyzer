@@ -179,6 +179,7 @@ def analyze_game(pgn_string, user_color, time_per_move=0.1):
                 moves_data.append({
                     "move_number": board.fullmove_number,
                     "move_san": board_before.san(move),
+                    "fen": board_before.fen(),  
                     "is_user_move": is_user_move,
                     "classification": classification,       
                     "cp_loss": round(cp_loss, 1) if is_user_move else None,

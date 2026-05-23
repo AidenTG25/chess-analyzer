@@ -43,7 +43,36 @@ def games():
     return jsonify({"games": summary, "cached": False})
 
 
+@app.route("/bestmove", methods=["POST"])
+def bestmove():
+    data = request.get_json()
+    fen = data.get("fen")
+    if not fen:
+        return jsonify({"error": "fen required"}), 400
 
+    import chess
+    import chess.engine
+    import os
+
+    stockfish_path = os.getenv("STOCKFISH_PATH", "bin/stockfish")
+    limit = chess.engine.Limit(time=0.1)
+
+    try:
+        board = chess.Board(fen)
+        with chess.engine.SimpleEngine.popen_uci(stockfish_path) as engine:
+            result = engine.play(board, limit)
+            move = result.move
+            san = board.san(move)
+            board.push(move)
+            return jsonify({
+                "move_uci": move.uci(),
+                "move_san": san,
+                "fen_after": board.fen()
+            })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+    
 @app.route("/analyze", methods=["POST"])
 def analyze():
     data = request.get_json()

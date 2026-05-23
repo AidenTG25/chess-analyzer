@@ -6,7 +6,7 @@
     <div class="main-layout" :class="{ 'has-analysis': analysisResult || analyzing }">
       <div class="game-list-panel" :style="(analysisResult || analyzing) ? { width: listWidth + 'px', minWidth: '200px' } : { width: '100%' }">
         <GameList
-          :games="games"
+          :games="games"  
           :selected-index="selectedGame?.index"
           @game-selected="onGameSelected"
         />
@@ -76,6 +76,16 @@ export default {
     window.removeEventListener('mousemove', this.onResize)
     window.removeEventListener('mouseup', this.stopResize)
   },
+  watch: {
+    username(val) {
+      this.$nextTick(() => {
+        const el = this.$refs.usernameInput
+        if (el) {
+          el.style.width = Math.max(140, val.length * 10 + 40) + 'px'
+        }
+      })
+    }
+  },
   methods: {
     onGamesLoaded({ games, username, year, month }) {
       this.games = games
@@ -119,6 +129,7 @@ export default {
     }
   }
 }
+  
 </script>
 
 <style>
