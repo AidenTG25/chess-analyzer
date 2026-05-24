@@ -30,8 +30,8 @@ export default {
       default: () => []
     },
     selectedIndex: {
-        type: Number,
-        default: null
+      type: Number,
+      default: null
     }
   },
   emits: ['game-selected'],
@@ -51,32 +51,64 @@ export default {
 <style scoped>
 .game-list { margin-top: 20px; }
 h2 { margin-bottom: 12px; color: #aaa; font-size: 14px; }
-.game-card.selected {
-  border-color: #e94560;
-  background: #1a1a3e;
-}
+
 .game-card {
   background: #16213e;
   border: 1px solid #0f3460;
   border-radius: 8px;
-  padding: 12px 16px;
+  padding: 10px 12px;
   margin-bottom: 8px;
   cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px;
   transition: border-color 0.2s;
 }
+
 .game-card:hover { border-color: #e94560; }
 
-.game-info { display: flex; gap: 12px; align-items: center; }
-.opponent { font-weight: 600; }
-.time-class { color: #aaa; font-size: 12px; text-transform: capitalize; }
+.game-card.selected {
+  border-color: #e94560;
+  background: #1a1a3e;
+}
 
-.game-meta { display: flex; gap: 12px; align-items: center; font-size: 13px; }
+.game-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.opponent {
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.time-class {
+  color: #aaa;
+  font-size: 11px;
+  text-transform: capitalize;
+}
+
+.game-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 12px;
+}
+
 .result.win { color: #4ecca3; font-weight: 600; }
 .result.loss { color: #e94560; font-weight: 600; }
 .result.draw { color: #aaa; font-weight: 600; }
-.color { color: #aaa; text-transform: capitalize; }
-.date { color: #666; }
+
+.color {
+  color: #aaa;
+  text-transform: capitalize;
+  font-size: 11px;
+}
+
+.date { color: #666; font-size: 11px; }
 </style>

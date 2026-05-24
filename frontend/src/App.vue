@@ -76,16 +76,6 @@ export default {
     window.removeEventListener('mousemove', this.onResize)
     window.removeEventListener('mouseup', this.stopResize)
   },
-  watch: {
-    username(val) {
-      this.$nextTick(() => {
-        const el = this.$refs.usernameInput
-        if (el) {
-          el.style.width = Math.max(140, val.length * 10 + 40) + 'px'
-        }
-      })
-    }
-  },
   methods: {
     onGamesLoaded({ games, username, year, month }) {
       this.games = games

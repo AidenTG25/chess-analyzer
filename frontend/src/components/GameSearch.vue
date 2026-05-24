@@ -2,7 +2,7 @@
   <div class="search" :class="{ compact: hasResults }">
     <h2 v-if="!hasResults">Find Your Games</h2>
     <div class="form">
-      <input v-model="username" placeholder="Chess.com username" />
+      <input ref="usernameInput" v-model="username" placeholder="Chess.com username" />
       <input v-model.number="year" type="number" placeholder="Year" />
       <input v-model.number="month" type="number" placeholder="Month" />
       <button @click="search" :disabled="loading">
@@ -31,6 +31,16 @@ export default {
       month: new Date().getMonth() + 1,
       loading: false,
       error: null
+    }
+  },
+  watch: {
+    username(val) {
+      this.$nextTick(() => {
+        const el = this.$refs.usernameInput
+        if (el) {
+          el.style.width = Math.max(140, val.length * 10 + 40) + 'px'
+        }
+      })
     }
   },
   methods: {
@@ -108,9 +118,12 @@ input {
   width: 140px;
   transition: all 0.4s ease;
   outline: none;
+  color-scheme: dark;
 }
 
 input:focus { border-color: #e94560; }
+
+input[type="number"] { color-scheme: dark; }
 
 button {
   background: #e94560;
