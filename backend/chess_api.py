@@ -7,7 +7,20 @@ def get_headers(username):
     return {
         "User-Agent": f"ChessAnalyzer/1.0 (user: {username})"
     }
+import re
 
+def extract_opening(pgn):
+    """Extract opening name from PGN headers."""
+    eco_url = re.search(r'\[ECOUrl "([^"]+)"\]', pgn)
+    eco = re.search(r'\[ECO "([^"]+)"\]', pgn)
+    
+    if eco_url:
+        slug = eco_url.group(1).split('/')[-1]
+        name = slug.replace('-', ' ')
+        return name
+    elif eco:
+        return eco.group(1)
+    return None
 def fetch_games(username, year, month):
     url = f"{BASE_URL}/{username}/games/{year:04d}/{month:02d}"
     try:
@@ -46,6 +59,7 @@ def parse_game_list(games, username):
             "time_class": game.get("time_class", "unknown"),
             "end_time": game.get("end_time"),
             "pgn": game.get("pgn", ""),
+            "opening": extract_opening(game.get("pgn", "")),
         })
 
     return summary

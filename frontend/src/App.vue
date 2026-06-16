@@ -26,6 +26,7 @@
           <div class="analysis-header">
             <h2>vs {{ analysisResult.opponent }}</h2>
             <span class="meta">{{ analysisResult.time_class }} · playing as {{ analysisResult.user_color }} · {{ analysisResult.result }}</span>
+            <span class="opening" v-if="analysisResult.opening">♟ {{ analysisResult.opening }}</span>
           </div>
           <AnalysisSummary :moves="analysisResult.moves" />
           <EvalGraph :moves="analysisResult.moves" :user-color="analysisResult.user_color" />
@@ -131,6 +132,13 @@ h1 { font-size: 28px; margin-bottom: 24px; color: #e94560; }
 .main-layout {
   display: flex;
   gap: 0;
+}
+
+.opening {
+  display: block;
+  font-size: 13px;
+  color: #4ecca3;
+  margin-top: 6px;
 }
 
 .game-list-panel {
