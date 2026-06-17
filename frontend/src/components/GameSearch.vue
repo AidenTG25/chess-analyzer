@@ -2,7 +2,7 @@
   <div class="search" :class="{ compact: hasResults }">
     <h2 v-if="!hasResults">Find Your Games</h2>
 
-    <div class="mode-select" >
+    <div class="mode-select">
       <button
         v-for="m in modes"
         :key="m.value"
@@ -20,28 +20,11 @@
         placeholder="Chess.com username"
       />
       <template v-if="mode === 'month'">
-        <input v-model.number="year" type="number" placeholder="Year" />
-        <input v-model.number="month" type="number" placeholder="Month" />
-      </template>
-      <template v-if="mode === 'last_n'">
-        <input v-model.number="n" type="number" placeholder="Last N games" />
-      </template>
-      <template v-if="mode === 'last_n_month'">
         <input v-model.number="year" type="number" placeholder="Year" min="2005" :max="new Date().getFullYear()" />
         <input v-model.number="month" type="number" placeholder="Month" min="1" max="12" />
-        <input v-model.number="n" type="number" placeholder="Last N games" min="1" max="500" />
-      </template>
-      <input
-        ref="usernameInput"
-        v-model="username"
-        placeholder="Chess.com username"
-      />
-      <template v-if="mode === 'month'">
-        <input v-model.number="year" type="number" placeholder="Year" />
-        <input v-model.number="month" type="number" placeholder="Month" />
       </template>
       <template v-if="mode === 'last_n'">
-        <input v-model.number="n" type="number" placeholder="Last N games" />
+        <input v-model.number="n" type="number" placeholder="Last N games" min="1" max="500" />
       </template>
       <template v-if="mode === 'last_n_month'">
         <input v-model.number="year" type="number" placeholder="Year" min="2005" :max="new Date().getFullYear()" />
@@ -50,11 +33,9 @@
       </template>
       <button @click="search" :disabled="loading">
         {{ loading ? loadingText : 'Search' }}
-        {{ loading ? loadingText : 'Search' }}
       </button>
     </div>
     <p v-if="error" class="error">{{ error }}</p>
-    <p v-if="progressText" class="progress">{{ progressText }}</p>
     <p v-if="progressText" class="progress">{{ progressText }}</p>
   </div>
 </template>
@@ -77,7 +58,7 @@ export default {
     return {
       username: this.savedUsername || '',
       year: this.savedYear || new Date().getFullYear(),
-      month: this.savedMonth ||new Date().getMonth() + 1,
+      month: this.savedMonth || new Date().getMonth() + 1,
       n: 10,
       mode: 'month',
       loading: false,
@@ -156,32 +137,6 @@ export default {
         this.month = currentMonth
       }
     }
-    
-    },
-    month(val) {
-      if (!val) return
-      if (val > 12) {
-        this.month = 1
-        this.year++
-      } else if (val < 1) {
-        this.month = 12
-        this.year--
-      }
-    },
-    year(val) {
-      const currentYear = new Date().getFullYear()
-      const currentMonth = new Date().getMonth() + 1
-      if (!val) return
-      if (val < 2005) {
-        this.year = 2005
-        this.month = 1
-      }
-      if (val > currentYear) {
-        this.year = currentYear
-        this.month = currentMonth
-      }
-    }
-    
   },
   methods: {
     prevMonth(year, month) {
@@ -202,57 +157,7 @@ export default {
       this.error = null
       this.progressText = ''
 
-      this.progressText = ''
-
       try {
-        if (this.mode === 'month') {
-          const games = await this.fetchMonth(this.username, this.year, this.month)
-          this.$emit('games-loaded', {
-            games,
-            username: this.username,
-            year: this.year,
-            month: this.month
-          })
-
-        } else if (this.mode === 'last_n_month') {
-          const games = await this.fetchMonth(this.username, this.year, this.month)
-          const sliced = games.slice(-Math.min(this.n, games.length))
-          this.$emit('games-loaded', {
-            games: sliced,
-            username: this.username,
-            year: this.year,
-            month: this.month
-          })
-
-        } else if (this.mode === 'last_n') {
-          // Progressive multi-month fetch
-          let collected = []
-          let { year, month } = { year: new Date().getFullYear(), month: new Date().getMonth() + 1 }
-          const target = this.n
-          let attempts = 0
-          const maxAttempts = 24 // go back up to 2 years
-
-          while (collected.length < target && attempts < maxAttempts) {
-            this.progressText = `Found ${collected.length} / ${target} games, loading ${year}/${month}...`
-            const games = await this.fetchMonth(this.username, year, month)
-            collected = [...games, ...collected]
-            if (games.length === 0 && attempts > 2) break // no more games
-            const prev = this.prevMonth(year, month)
-            year = prev.year
-            month = prev.month
-            attempts++
-          }
-
-          const sliced = collected.slice(-target)
-          this.progressText = ''
-          this.$emit('games-loaded', {
-            games: sliced,
-            username: this.username,
-            year: new Date().getFullYear(),
-            month: new Date().getMonth() + 1
-          })
-        }
-
         if (this.mode === 'month') {
           const games = await this.fetchMonth(this.username, this.year, this.month)
           this.$emit('games-loaded', {
@@ -306,7 +211,6 @@ export default {
       } finally {
         this.loading = false
         this.progressText = ''
-        this.progressText = ''
       }
     }
   }
@@ -340,6 +244,12 @@ h2 {
   display: flex;
   gap: 8px;
   margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.search.compact .mode-select {
+  margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 
 .mode-select button {
@@ -353,6 +263,11 @@ h2 {
   transition: all 0.2s;
 }
 
+.search.compact .mode-select button {
+  padding: 3px 10px;
+  font-size: 11px;
+}
+
 .mode-select button.active {
   background: #e94560;
   border-color: #e94560;
@@ -363,26 +278,17 @@ h2 {
   border-color: #e94560;
   color: #eee;
 }
-.search.compact .form {
-  justify-content: flex-start;
-}
-.search.compact .mode-select {
-  margin-bottom: 8px;
-  flex-wrap: wrap;
-}
 
-.search.compact .mode-select button {
-  padding: 3px 10px;
-  font-size: 11px;
-}
 .form {
   display: flex;
   gap: 10px;
   transition: all 0.4s ease;
   flex-wrap: wrap;
   justify-content: center;
-  flex-wrap: wrap;
-  justify-content: center;
+}
+
+.search.compact .form {
+  justify-content: flex-start;
 }
 
 .search:not(.compact) input {
@@ -427,6 +333,5 @@ button:hover { background: #c73652; }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .error { color: #e94560; font-size: 13px; margin-top: 8px; }
-.progress { color: #4ecca3; font-size: 13px; margin-top: 8px; }
 .progress { color: #4ecca3; font-size: 13px; margin-top: 8px; }
 </style>
