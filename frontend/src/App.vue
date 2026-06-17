@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <h1>Chess Analyzer</h1>
-    <GameSearch @games-loaded="onGamesLoaded" :has-results="games.length > 0" />
+    <GameSearch @games-loaded="onGamesLoaded" :has-results="games.length > 0" :saved-username="username"  :saved-year="year"  :saved-month="month"/>
 
     <div class="main-layout" :class="{ 'has-analysis': analysisResult || analyzing }">
       <div class="game-list-panel" :style="(analysisResult || analyzing) ? { width: listWidth + 'px', minWidth: '200px' } : { width: '100%' }">
@@ -91,11 +91,20 @@ export default {
       this.selectedGame = game
       this.analyzing = true
       this.analysisResult = null
+      const gameYear = game.fetchYear || new Date(game.end_time * 1000).getFullYear()
+      const gameMonth = game.fetchMonth || new Date(game.end_time * 1000).getMonth() + 1
+      console.log('analyze payload:', {
+      username: this.username,
+      year: gameYear,
+      month: gameMonth,
+      mode: 'single',
+      index: game.index
+    })
       try {
         const res = await axios.post('http://localhost:5000/analyze', {
           username: this.username,
-          year: this.year,
-          month: this.month,
+          year: gameYear,
+          month: gameMonth,
           mode: 'single',
           index: game.index
         })

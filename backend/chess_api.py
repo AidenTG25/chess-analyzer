@@ -70,6 +70,6 @@ def select_games(summary, mode, n=None, index=None):
     elif mode == "last_n" and n is not None:
         return summary[-n:]
     elif mode == "single" and index is not None:
-        if 0 <= index < len(summary):
-            return [summary[index]]
+        match = [g for g in summary if g["index"] == index]
+        return match if match else []
     return []

@@ -2,7 +2,7 @@
   <div class="search" :class="{ compact: hasResults }">
     <h2 v-if="!hasResults">Find Your Games</h2>
 
-    <div class="mode-select" v-if="!hasResults">
+    <div class="mode-select" >
       <button
         v-for="m in modes"
         :key="m.value"
@@ -49,13 +49,16 @@ export default {
   name: 'GameSearch',
   emits: ['games-loaded'],
   props: {
-    hasResults: { type: Boolean, default: false }
+    hasResults: { type: Boolean, default: false },
+    savedUsername: { type: String, default: '' },
+    savedYear: { type: Number, default: null },
+    savedMonth: { type: Number, default: null },
   },
   data() {
     return {
-      username: '',
-      year: new Date().getFullYear(),
-      month: new Date().getMonth() + 1,
+      username: this.savedUsername || '',
+      year: this.savedYear || new Date().getFullYear(),
+      month: this.savedMonth ||new Date().getMonth() + 1,
       n: 10,
       mode: 'month',
       loading: false,
@@ -69,7 +72,40 @@ export default {
       ]
     }
   },
+  mounted() {
+    const savedSearch = sessionStorage.getItem('chessSearchState')
+    if (savedSearch) {
+      const { mode, n } = JSON.parse(savedSearch)
+      if (mode) this.mode = mode
+      if (n) this.n = n
+    }
+    if (this.username) {
+      this.$nextTick(() => {
+        const el = this.$refs.usernameInput
+        if (el) {
+          el.style.width = Math.max(140, this.username.length * 10 + 40) + 'px'
+        }
+      })
+    }
+  },
   watch: {
+    savedUsername(val) {
+      if (val && !this.username) {
+        this.username = val
+        this.$nextTick(() => {
+          const el = this.$refs.usernameInput
+          if (el) {
+            el.style.width = Math.max(140, val.length * 10 + 40) + 'px'
+          }
+        })
+      }
+    },
+    savedYear(val) {
+      if (val && !this.year) this.year = val
+    },
+    savedMonth(val) {
+      if (val && !this.month) this.month = val
+    },
     username(val) {
       this.$nextTick(() => {
         const el = this.$refs.usernameInput
@@ -111,11 +147,13 @@ export default {
 
     async fetchMonth(username, year, month) {
       const res = await axios.post(`${API}/games`, { username, year, month })
-      return res.data.games || []
+      const games = res.data.games || []
+      return games.map(g => ({ ...g, fetchYear: year, fetchMonth: month }))
     },
 
     async search() {
       if (!this.username) return
+      sessionStorage.setItem('chessSearchState', JSON.stringify({ mode: this.mode, n: this.n }))
       this.loading = true
       this.error = null
       this.progressText = ''
@@ -193,6 +231,8 @@ export default {
 .search.compact {
   padding: 12px 0;
   align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 h2 {
@@ -228,7 +268,18 @@ h2 {
   border-color: #e94560;
   color: #eee;
 }
+.search.compact .form {
+  justify-content: flex-start;
+}
+.search.compact .mode-select {
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
 
+.search.compact .mode-select button {
+  padding: 3px 10px;
+  font-size: 11px;
+}
 .form {
   display: flex;
   gap: 10px;
