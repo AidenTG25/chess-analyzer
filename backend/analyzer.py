@@ -110,7 +110,50 @@ def detect_patterns(board_before, move, board_after):
         ]
         if threats:
             patterns.append("Allowed back rank threat")
+    # 3. Fork detection — opponent can attack 2+ pieces with one move
+    for opp_move in board_after.legal_moves:
+        attacked = []
+        board_copy = board_after.copy()
+        board_copy.push(opp_move)
+        for sq in chess.SQUARES:
+            piece = board_copy.piece_at(sq)
+            if piece and piece.color == our_color and piece.piece_type != chess.KING:
+                if board_copy.is_attacked_by(not our_color, sq):
+                    attacked.append((sq, piece))
+        if len(attacked) >= 2:
+            piece_names = [chess.piece_name(p.piece_type).capitalize() for _, p in attacked]
+            squares = [chess.square_name(sq) for sq, _ in attacked]
+            fork_piece = board_after.piece_at(opp_move.from_square)
+            if fork_piece:
+                fork_name = chess.piece_name(fork_piece.piece_type).capitalize()
+                patterns.append(
+                    f"Allows {fork_name} fork on {chess.square_name(opp_move.to_square)} "
+                    f"attacking your {' and '.join(piece_names)} on {' and '.join(squares)}"
+                )
+            break  # report first fork found
 
+    # 4. Missed winning capture — could user have captured something profitably before this move?
+    for user_move in board_before.legal_moves:
+        if not board_before.is_capture(user_move):
+            continue
+        gain = simple_see(board_before, user_move.to_square, board_before.turn)
+        if gain > 0:
+            captured = board_before.piece_at(user_move.to_square)
+            if captured:
+                captured_name = chess.piece_name(captured.piece_type).capitalize()
+                square_name = chess.square_name(user_move.to_square)
+                patterns.append(
+                    f"Missed winning capture: could take {captured_name} on {square_name} (net +{gain} material)"
+                )
+            break  # report first missed capture
+
+    # 5. King exposure — did our move leave king with fewer defenders?
+    king_sq = board_after.king(our_color)
+    if king_sq:
+        defenders_after = len(board_after.attackers(our_color, king_sq))
+        attackers_after = len(board_after.attackers(not our_color, king_sq))
+        if attackers_after > 0 and defenders_after == 0:
+            patterns.append("King is exposed with no defenders")
     return patterns
 
 def analyze_game(pgn_string, user_color, time_per_move=0.1):
