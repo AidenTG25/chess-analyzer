@@ -55,7 +55,7 @@ chess-analyzer/
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/AidenTG25/chess-blunder-tracker.git
+git clone https://github.com/AidenTG25/chess-analyzer.git
 cd chess-blunder-tracker
 ```
 
