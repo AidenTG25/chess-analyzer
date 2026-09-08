@@ -82,6 +82,7 @@ def analyze():
     month = data.get("month")
     mode = data.get("mode")
     index = data.get("index")
+    depth = data.get("depth", 15)
     n = data.get("n")
 
     if not username or not year or not month or not mode:
@@ -124,7 +125,7 @@ def analyze():
             })
             continue
 
-        moves, err = analyze_game(game["pgn"], game["user_color"])
+        moves, err = analyze_game(game["pgn"], game["user_color"], depth=depth  )
         if err:
             results.append({
                 "game_index": game_index,

@@ -156,7 +156,7 @@ def detect_patterns(board_before, move, board_after):
             patterns.append("King is exposed with no defenders")
     return patterns
 
-def analyze_game(pgn_string, user_color, time_per_move=0.1):
+def analyze_game(pgn_string, user_color, depth=10):
     
     game = chess.pgn.read_game(io.StringIO(pgn_string))
     if not game:
@@ -165,7 +165,7 @@ def analyze_game(pgn_string, user_color, time_per_move=0.1):
     board = game.board()
     moves_data = []
     user_color_bool = chess.WHITE if user_color == "white" else chess.BLACK
-    limit = chess.engine.Limit(time=time_per_move)
+    limit = chess.engine.Limit(depth=depth)
 
     try:
         with chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH) as engine:
