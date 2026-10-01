@@ -1,17 +1,29 @@
 # app.py
-from flask import Flask, request, jsonify
+import os
+
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import cache
 from chess_api import fetch_games, parse_game_list, select_games
 from analyzer import analyze_game
 
-app = Flask(__name__)
+# In Docker the built Vue app is copied to backend/static and served by Flask
+# itself, so the whole thing runs as one service on one URL.
+app = Flask(__name__, static_folder="static", static_url_path="")
 CORS(app)
 
 
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok"})
+
+
+@app.route("/", methods=["GET"])
+def index():
+    index_path = os.path.join(app.static_folder, "index.html")
+    if os.path.exists(index_path):
+        return send_from_directory(app.static_folder, "index.html")
+    return jsonify({"status": "ok", "message": "API running. Frontend not built."})
 
 
 @app.route("/games", methods=["POST"])
@@ -52,7 +64,6 @@ def bestmove():
 
     import chess
     import chess.engine
-    import os
 
     stockfish_path = os.getenv("STOCKFISH_PATH", "bin/stockfish")
     limit = chess.engine.Limit(time=0.1)
@@ -71,8 +82,8 @@ def bestmove():
             })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
-    
+
+
 @app.route("/analyze", methods=["POST"])
 def analyze():
     data = request.get_json()
@@ -82,7 +93,6 @@ def analyze():
     month = data.get("month")
     mode = data.get("mode")
     index = data.get("index")
-    depth = data.get("depth", 15)
     n = data.get("n")
 
     if not username or not year or not month or not mode:
@@ -125,7 +135,7 @@ def analyze():
             })
             continue
 
-        moves, err = analyze_game(game["pgn"], game["user_color"], depth=depth  )
+        moves, err = analyze_game(game["pgn"], game["user_color"])
         if err:
             results.append({
                 "game_index": game_index,
@@ -150,4 +160,5 @@ def analyze():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Local dev only. In Docker, gunicorn runs the app (see Dockerfile).
+    app.run(debug=os.getenv("FLASK_DEBUG", "1") == "1")

@@ -21,6 +21,8 @@ import { Chess } from 'chess.js'
 import { Chessboard, COLOR, INPUT_EVENT_TYPE } from 'cm-chessboard'
 import { Markers, MARKER_TYPE } from 'cm-chessboard/src/extensions/markers/Markers.js'
 
+const API = import.meta.env.VITE_API_URL ?? ''
+
 export default {
   name: 'ChessBoard',
   props: {
@@ -99,7 +101,7 @@ export default {
       this.loading = true
       this.error = null
       try {
-        const res = await fetch('http://localhost:5000/bestmove', {
+        const res = await fetch(`${API}/bestmove`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fen: this.chess.fen() })
@@ -112,10 +114,6 @@ export default {
           this.history.push(move)
           this.lastMoveSan = data.move_san
           this.board.setPosition(this.chess.fen(), true)
-          const userColor = this.orientation === 'white' ? 'w' : 'b'
-          if (this.chess.turn() !== userColor) {
-            setTimeout(() => this.playBestMove(), 500)
-          }
           this.markBestMove()
         }
       } catch (e) {

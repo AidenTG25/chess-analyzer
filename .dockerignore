@@ -1,0 +1,15 @@
+.git
+.gitignore
+node_modules
+frontend/node_modules
+frontend/dist
+backend/.env
+backend/venv
+backend/test.py
+**/__pycache__
+*.pyc
+.vscode
+README.md
+venv
+**/venv
+.venv
