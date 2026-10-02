@@ -4,6 +4,9 @@ WORKDIR /frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY frontend/ ./
+# The chessboard's CSS/piece SVGs aren't committed to the repo, so pull them
+# from the npm package into public/ before building (same as `npm run copy-assets`).
+RUN mkdir -p public/cm-chessboard && cp -r node_modules/cm-chessboard/assets/. public/cm-chessboard/
 RUN npm run build
 
 # ---------- Stage 2: Flask API + Stockfish + built frontend ----------

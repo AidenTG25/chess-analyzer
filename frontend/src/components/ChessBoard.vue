@@ -114,6 +114,10 @@ export default {
           this.history.push(move)
           this.lastMoveSan = data.move_san
           this.board.setPosition(this.chess.fen(), true)
+          const userColor = this.orientation === 'white' ? 'w' : 'b'
+          if (this.chess.turn() !== userColor) {
+            setTimeout(() => this.playBestMove(), 500)
+          }
           this.markBestMove()
         }
       } catch (e) {

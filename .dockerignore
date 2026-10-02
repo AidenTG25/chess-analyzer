@@ -5,11 +5,11 @@ frontend/node_modules
 frontend/dist
 backend/.env
 backend/venv
+venv
+**/venv
+.venv
 backend/test.py
 **/__pycache__
 *.pyc
 .vscode
 README.md
-venv
-**/venv
-.venv

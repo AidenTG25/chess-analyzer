@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <h1>Chess Analyzer</h1>
-    <GameSearch @games-loaded="onGamesLoaded" :has-results="games.length > 0" />
+    <GameSearch @games-loaded="onGamesLoaded" :has-results="games.length > 0" :saved-username="username"  :saved-year="year"  :saved-month="month"/>
 
     <div class="main-layout" :class="{ 'has-analysis': analysisResult || analyzing }">
       <div class="game-list-panel" :style="(analysisResult || analyzing) ? { width: listWidth + 'px', minWidth: '200px' } : { width: '100%' }">
@@ -26,6 +26,7 @@
           <div class="analysis-header">
             <h2>vs {{ analysisResult.opponent }}</h2>
             <span class="meta">{{ analysisResult.time_class }} · playing as {{ analysisResult.user_color }} · {{ analysisResult.result }}</span>
+            <span class="opening" v-if="analysisResult.opening">♟ {{ analysisResult.opening }}</span>
           </div>
           <AnalysisSummary :moves="analysisResult.moves" />
           <EvalGraph :moves="analysisResult.moves" :user-color="analysisResult.user_color" />
@@ -92,11 +93,20 @@ export default {
       this.selectedGame = game
       this.analyzing = true
       this.analysisResult = null
+      const gameYear = game.fetchYear || new Date(game.end_time * 1000).getFullYear()
+      const gameMonth = game.fetchMonth || new Date(game.end_time * 1000).getMonth() + 1
+      console.log('analyze payload:', {
+      username: this.username,
+      year: gameYear,
+      month: gameMonth,
+      mode: 'single',
+      index: game.index
+    })
       try {
         const res = await axios.post(`${API}/analyze`, {
           username: this.username,
-          year: this.year,
-          month: this.month,
+          year: gameYear,
+          month: gameMonth,
           mode: 'single',
           index: game.index
         })
@@ -133,6 +143,13 @@ h1 { font-size: 28px; margin-bottom: 24px; color: #e94560; }
 .main-layout {
   display: flex;
   gap: 0;
+}
+
+.opening {
+  display: block;
+  font-size: 13px;
+  color: #4ecca3;
+  margin-top: 6px;
 }
 
 .game-list-panel {
