@@ -5,8 +5,9 @@ A full-stack web app that reviews your Chess.com games with the Stockfish engine
 **Live demo:** https://chess-analyzer-p307.onrender.com
 *(Free hosting: the first load after a quiet period can take ~30 seconds to wake up, and analysis runs on a small shared CPU, so it's slower than running locally.)*
 
-<!-- Add a screenshot or GIF here, e.g. save it as docs/screenshot.png and uncomment: -->
-<!-- ![Chess Analyzer screenshot](docs/screenshot.png) -->
+![Accuracy summary and evaluation graph](docs/analysis-summary.png)
+ 
+![Move-by-move review with tactical hints and interactive board](docs/move-review.png)
 
 ---
 
