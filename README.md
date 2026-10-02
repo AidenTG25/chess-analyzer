@@ -1,70 +1,52 @@
 # Chess Analyzer
 
-A full-stack web application for analyzing your Chess.com games using the Stockfish engine. Fetch your game history, get move-by-move evaluations, replay positions interactively, and visualize where the game went wrong.
+A full-stack web app that reviews your Chess.com games with the Stockfish engine. Pull your games by username, get a move-by-move evaluation, see where the game turned, and replay positions on an interactive board.
+
+**Live demo:** https://chess-analyzer-p307.onrender.com
+*(Free hosting: the first load after a quiet period can take ~30 seconds to wake up, and analysis runs on a small shared CPU, so it's slower than running locally.)*
+
+<!-- Add a screenshot or GIF here, e.g. save it as docs/screenshot.png and uncomment: -->
+<!-- ![Chess Analyzer screenshot](docs/screenshot.png) -->
 
 ---
 
 ## Features
 
-- **Game Fetching** — pulls your recent games from the Chess.com Public API by username, year, and month
-- **Deep Move Analysis** — runs every move through the Stockfish UCI engine at configurable depth; classifies each move as Best, Excellent, Good, Inaccuracy, Mistake, or Blunder using win-percentage loss via a sigmoid model
-- **Tactical Hints** — flags back-rank threats and uses a custom Static Exchange Evaluation (SEE) algorithm to generate natural-language hints for bad moves
-- **Evaluation Graph** — per-move chart showing how the position shifted across the entire game
-- **Interactive Board Replay** — step through moves, branch off at any point, and continue playing with Stockfish responding optimally
-- **Redis Caching** — analysis results cached for 2 hours (keyed by `username:year:month:game_index`) to avoid redundant engine computation
+- **Flexible game search**: load a whole month, the last N games, or the last N games of a chosen month, straight from the Chess.com Public API
+- **Move classification**: every move is evaluated by Stockfish at configurable depth (default 15) and graded Best, Excellent, Good, Inaccuracy, Mistake or Blunder using win-percentage loss from a sigmoid model
+- **Tactical hints**: a custom Static Exchange Evaluation (SEE) routine and a back-rank threat detector turn flagged moves into plain-English explanations
+- **Opening detection**: shows the opening for each game
+- **Evaluation graph**: per-move chart of how the position shifted across the game
+- **Interactive board replay**: step through the game, branch off at any move, and play on with Stockfish answering
+- **Redis caching**: results are cached for 2 hours, keyed by `username:year:month:game_index`; the app still works without Redis, it just re-runs the engine
+- **State survives a refresh**: your search mode and results are restored from the browser session
+
+## Performance
+
+On a 23-move game at depth 15 (local Docker), a first analysis took about **9.7 s**, and a repeat request served from the Redis cache took about **28 ms** (roughly 350x faster). The deployed demo runs on a small free instance, so its cold analysis is slower than this.
 
 ---
 
-## Project Structure
+## Run with Docker (easiest)
 
-```
-chess-analyzer/
-├── backend/
-│   ├── app.py          # Flask app + route definitions
-│   ├── analyzer.py     # Stockfish integration, move classification, SEE
-│   ├── cache.py        # Redis caching layer
-│   ├── chess_api.py    # Chess.com API client
-│   └── .env.example    # Environment variable template
-└── frontend/
-    ├── src/
-    │   ├── App.vue
-    │   └── components/
-    │       ├── GameSearch.vue
-    │       ├── GameList.vue
-    │       ├── ChessBoard.vue
-    │       ├── EvalGraph.vue
-    │       ├── MoveList.vue
-    │       └── AnalysisSummary.vue
-    ├── vite.config.js
-    └── package.json
-```
-
----
-
-## Prerequisites
-
-- Python 3.10+
-- Node.js 18+
-- [Stockfish](https://stockfishchess.org/download/) installed and accessible on your system
-- Redis running locally (default: `localhost:6379`)
-
----
-
-## Setup & Running
-
-### 1. Clone the repo
+You only need Docker. The image bundles Stockfish, the Flask API and the built Vue frontend, and Compose starts Redis alongside it.
 
 ```bash
 git clone https://github.com/AidenTG25/chess-analyzer.git
-cd chess-blunder-tracker
+cd chess-analyzer
+docker compose up --build
 ```
 
-### 2. Backend
+Then open http://localhost:5000.
+
+## Run locally (development)
+
+**Prerequisites:** Python 3.10+, Node.js 18+, [Stockfish](https://stockfishchess.org/download/), and optionally Redis.
+
+### 1. Backend
 
 ```bash
 cd backend
-
-# Create and activate a virtual environment
 python -m venv venv
 
 # Windows
@@ -72,67 +54,78 @@ venv\Scripts\activate
 # macOS/Linux
 source venv/bin/activate
 
-# Install dependencies
 pip install -r requirements.txt
-
-# Set up environment variables
-cp .env.example .env
-# Edit .env and set STOCKFISH_PATH to your Stockfish binary
+cp .env.example .env     # then set STOCKFISH_PATH to your Stockfish binary
 ```
 
-Your `.env` should look like:
+`.env`:
 
 ```
 STOCKFISH_PATH=C:/path/to/stockfish.exe   # Windows
-# STOCKFISH_PATH=/usr/bin/stockfish       # Linux/macOS
+# STOCKFISH_PATH=/usr/games/stockfish     # Linux
 REDIS_URL=redis://localhost:6379
 ```
 
 ```bash
-# Start the Flask backend (runs on port 5000)
-python app.py
+python app.py            # runs on http://localhost:5000
 ```
 
-### 3. Frontend
+### 2. Frontend
 
-Open a new terminal:
+In a new terminal:
 
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Start the Vite dev server (runs on port 5173)
-npm run dev
+npm run copy-assets      # copies the chessboard CSS/pieces into public/ (Windows script)
+npm run dev              # runs on http://localhost:5173
 ```
 
-### 4. Open the app
-
-Navigate to `http://localhost:5173` in your browser.
+In development the frontend calls the API at `http://localhost:5000` (set in `frontend/.env.development`). In the Docker image, Flask serves the built frontend itself, so no URL is needed.
 
 ---
 
-## API Endpoints
+## API
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/games?username=&year=&month=` | Fetch game list from Chess.com |
-| `POST` | `/analyze` | Run full Stockfish analysis on a game |
-| `POST` | `/bestmove` | Get best move for a given FEN position |
+All endpoints take and return JSON.
 
----
+| Method | Endpoint | Body | Description |
+|--------|----------|------|-------------|
+| `GET` | `/health` | none | Health check |
+| `POST` | `/games` | `username`, `year`, `month` | List a user's games for a month |
+| `POST` | `/analyze` | `username`, `year`, `month`, `mode` (`single` / `last_n` / `all`), plus `index`, `n`, `depth` | Run Stockfish analysis on the selected game(s) |
+| `POST` | `/bestmove` | `fen` | Best move for a position |
 
-## Tech Stack
+## Project structure
 
-**Backend:** Python, Flask, python-chess, Stockfish, Redis, Flask-CORS, python-dotenv
+```
+chess-analyzer/
+├── Dockerfile              # multi-stage build: Vue -> Flask + Stockfish
+├── docker-compose.yml      # app + Redis
+├── backend/
+│   ├── app.py              # Flask app and routes
+│   ├── analyzer.py         # Stockfish integration, move classification, SEE
+│   ├── cache.py            # Redis caching layer (fails soft without Redis)
+│   ├── chess_api.py        # Chess.com API client
+│   └── .env.example
+├── frontend/
+│   └── src/
+│       ├── App.vue
+│       └── components/     # GameSearch, GameList, ChessBoard, EvalGraph, MoveList, AnalysisSummary
+└── scripts/
+    └── bench_analyze.py    # cold vs cached timing for /analyze
+```
 
-**Frontend:** Vue 3, Vite, Axios, cm-chessboard, Chart.js, chess.js
+## Tech stack
 
----
+**Backend:** Python, Flask, Gunicorn, python-chess, Stockfish, Redis
+
+**Frontend:** Vue 3, Vite, Axios, cm-chessboard, chess.js, Chart.js
+
+**Infra:** Docker, Docker Compose, Render (app), Upstash (Redis)
 
 ## Notes
 
-- Redis is optional — the app works without it, but repeated analysis of the same game will re-run the engine each time
-- Chess.com's public API has rate limits on how many games can be fetched per request; this is a platform constraint, not a project one
-- The project started as a CLI tool before being rebuilt as a full-stack web app
+- Redis is optional. Without it, repeated analysis of the same game re-runs the engine each time.
+- Chess.com's public API rate-limits requests; that is a platform limit, not a project one.
+- The project started as a CLI tool before being rebuilt as a full-stack web app.
